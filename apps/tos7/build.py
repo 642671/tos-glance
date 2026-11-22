@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent
 APP_ID = "glance"
 APP_USER = "glance"
 SYSTEM_ID = "glance-system"
-PACKAGE_VERSION = "0.8.8"
+PACKAGE_VERSION = "0.8.9"
 UPSTREAM_TAG = "v0.8.8"
 UPSTREAM_BIN_NAME = "glance"
 DEFAULT_CONF_NAME = "glance.yml"
@@ -407,6 +407,7 @@ def verify_package(path: Path, platform: str, version: str) -> None:
             f"./usr/local/{APP_ID}/images/icons/{APP_ID}.svg",
             f"./usr/local/{APP_ID}/init.d/{SYSTEM_ID}.service",
             f"./usr/local/{APP_ID}/conf/{DEFAULT_CONF_NAME}",
+            f"./usr/local/{APP_ID}/docs/PRIVACY.md",
         }
         missing = required - data_names
         if missing:
@@ -417,6 +418,9 @@ def verify_package(path: Path, platform: str, version: str) -> None:
         packaged = json.loads(config_file.read().decode("utf-8"))
         if packaged.get("platform") != platform or packaged.get("version") != version:
             raise SystemExit("packaged config platform/version mismatch")
+        help_url = packaged.get("help")
+        if not isinstance(help_url, str) or "docs/PRIVACY.md" not in help_url:
+            raise SystemExit("packaged config.ini help must point to the privacy policy")
         for name in (f"{APP_ID}-service", UPSTREAM_BIN_NAME):
             entry = data.getmember(f"./usr/local/{APP_ID}/bin/{name}")
             if not entry.mode & 0o111:
@@ -482,6 +486,7 @@ def build(platform: str, clean: bool) -> Path:
         package_root / "init.d",
         package_root / "data",
         package_root / "logs",
+        package_root / "docs",
     ):
         directory.mkdir(parents=True, exist_ok=True)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -497,6 +502,10 @@ def build(platform: str, clean: bool) -> Path:
     shutil.copy2(ROOT / f"{APP_ID}.env", package_root / f"{APP_ID}.env")
     shutil.copy2(ROOT / "LICENSE", package_root / "LICENSE")
     shutil.copy2(ROOT / "NOTICE", package_root / "NOTICE")
+    shutil.copy2(
+        ROOT.parents[1] / "docs" / "PRIVACY.md",
+        package_root / "docs" / "PRIVACY.md",
+    )
     shutil.copy2(
         ROOT / "images" / "icons" / f"{APP_ID}.svg",
         package_root / "images" / "icons" / f"{APP_ID}.svg",

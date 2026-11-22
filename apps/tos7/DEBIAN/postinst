@@ -52,18 +52,33 @@ collect_diagnostics() {
 
 case "$1" in
     configure)
-        if ! getent passwd "${APP_USER}" >/dev/null 2>&1 \
-            && command -v useradd >/dev/null 2>&1; then
-            if getent group allusers >/dev/null 2>&1; then
-                useradd --system --no-create-home \
-                    --home-dir "${APP_DIR}" \
-                    --shell /usr/sbin/nologin \
-                    --gid allusers "${APP_USER}" 2>/dev/null || true
-            else
-                useradd --system --user-group --no-create-home \
-                    --home-dir "${APP_DIR}" \
-                    --shell /usr/sbin/nologin \
-                    "${APP_USER}" 2>/dev/null || true
+        if ! getent passwd "${APP_USER}" >/dev/null 2>&1; then
+            if command -v useradd >/dev/null 2>&1; then
+                if getent group allusers >/dev/null 2>&1; then
+                    useradd --system --no-create-home \
+                        --home-dir "${APP_DIR}" \
+                        --shell /usr/sbin/nologin \
+                        --gid allusers "${APP_USER}" 2>/dev/null || true
+                else
+                    useradd --system --user-group --no-create-home \
+                        --home-dir "${APP_DIR}" \
+                        --shell /usr/sbin/nologin \
+                        "${APP_USER}" 2>/dev/null || true
+                fi
+            fi
+            if ! getent passwd "${APP_USER}" >/dev/null 2>&1 \
+                && command -v adduser >/dev/null 2>&1; then
+                if getent group allusers >/dev/null 2>&1; then
+                    adduser --system --no-create-home \
+                        --home "${APP_DIR}" \
+                        --shell /usr/sbin/nologin \
+                        --ingroup allusers "${APP_USER}" 2>/dev/null || true
+                else
+                    adduser --system --no-create-home --group \
+                        --home "${APP_DIR}" \
+                        --shell /usr/sbin/nologin \
+                        "${APP_USER}" 2>/dev/null || true
+                fi
             fi
         fi
 
@@ -98,7 +113,7 @@ case "$1" in
                 systemctl start "${SYSTEM_ID}.service" || true
 
                 WAITED=0
-                while [ "${WAITED}" -lt 25 ]; do
+                while [ "${WAITED}" -lt 45 ]; do
                     if [ -S "${SOCKET_PATH}" ] \
                         && systemctl is-active --quiet "${SYSTEM_ID}.service"; then
                         break
@@ -112,7 +127,7 @@ case "$1" in
                     log INFO "service active, socket ready after ${WAITED}s"
                 else
                     collect_diagnostics \
-                        "installed but not serving after 25s"
+                        "installed but not serving after 45s"
                 fi
             fi
         fi

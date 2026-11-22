@@ -6,9 +6,17 @@ APP_USER="glance"
 SYSTEM_ID="glance-system"
 APP_DIR="/usr/local/${APP_ID}"
 UNIT_DST="/etc/systemd/system/${SYSTEM_ID}.service"
+SOCKET_PATH="/var/api/${APP_ID}.sock"
+
+if [ -d /run/systemd/system ]; then
+    systemctl stop "${SYSTEM_ID}.service" 2>/dev/null || true
+    systemctl disable "${SYSTEM_ID}.service" 2>/dev/null || true
+    systemctl reset-failed "${SYSTEM_ID}.service" 2>/dev/null || true
+fi
 
 rm -f "${UNIT_DST}" 2>/dev/null || true
-rm -f "/var/api/${APP_ID}.sock" 2>/dev/null || true
+rm -f "/etc/systemd/system/multi-user.target.wants/${SYSTEM_ID}.service" 2>/dev/null || true
+rm -f "${SOCKET_PATH}" 2>/dev/null || true
 
 if [ -d /run/systemd/system ]; then
     systemctl daemon-reload || true
@@ -16,14 +24,23 @@ fi
 
 case "$1" in
     remove|purge)
-        # Remove only this application's directory; never touch shared paths
-        # such as /var/api.
+        # Remove only this application's own files, socket, unit, and service
+        # user. Never delete shared directories such as /var/api, and never
+        # delete user volume data such as /mnt or /Volume1.
         rm -rf "${APP_DIR}" 2>/dev/null || true
+        if getent passwd "${APP_USER}" >/dev/null 2>&1; then
+            userdel "${APP_USER}" 2>/dev/null || true
+        fi
+        if getent group "${APP_USER}" >/dev/null 2>&1; then
+            case "${APP_USER}" in
+                allusers|root|users)
+                    ;;
+                *)
+                    groupdel "${APP_USER}" 2>/dev/null || true
+                    ;;
+            esac
+        fi
         ;;
 esac
-
-if [ "$1" = "purge" ] && id "${APP_USER}" >/dev/null 2>&1; then
-    userdel "${APP_USER}" 2>/dev/null || true
-fi
 
 exit 0

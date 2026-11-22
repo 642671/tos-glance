@@ -6,6 +6,7 @@ SYSTEM_ID="glance-system"
 if [ -d /run/systemd/system ]; then
     systemctl stop "${SYSTEM_ID}.service" 2>/dev/null || true
     systemctl disable "${SYSTEM_ID}.service" 2>/dev/null || true
+    systemctl reset-failed "${SYSTEM_ID}.service" 2>/dev/null || true
 fi
 
 exit 0

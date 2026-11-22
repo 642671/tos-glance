@@ -5,9 +5,10 @@ This is a **TerraMaster TOS 7 packaging wrapper** for the official
 
 It is not the upstream Glance project. The official Linux `x86_64` and
 `aarch64` binaries from the Glance v0.8.8 release are packaged unchanged.
+TOS package version `0.8.9` is a wrapper revision of those same upstream binaries.
 Copyright in Glance remains with the upstream authors. This repository only
 adds TOS 7 Deb packaging, a local Unix-socket reverse proxy, systemd units,
-and a default configuration.
+a default configuration, and a [privacy policy](docs/PRIVACY.md).
 
 - Upstream: https://github.com/glanceapp/glance
 - Upstream tag: `v0.8.8`
@@ -47,8 +48,8 @@ runs `dpkg-deb --info` and `dpkg-deb --contents`.
 
 Output:
 
-- `apps/tos7/dist/glance_0.8.8_x86_64.deb`
-- `apps/tos7/dist/glance_0.8.8_aarch64.deb`
+- `apps/tos7/dist/glance_0.8.9_x86_64.deb`
+- `apps/tos7/dist/glance_0.8.9_aarch64.deb`
 
 Build directories, downloaded upstream binaries, and `.deb` files are gitignored
 and must not be committed.
@@ -66,3 +67,7 @@ Glance and this packaging are licensed under the GNU Affero General Public
 License v3.0. You must preserve the license and notices when redistributing.
 If you modify Glance itself, you must also release the corresponding source
 under AGPL-3.0. This wrapper does not modify the official Glance binary.
+
+## Privacy and uninstall
+
+The privacy policy is published at [docs/PRIVACY.md](docs/PRIVACY.md) and is also shipped inside the package. Uninstalling the application removes `/usr/local/glance`, the service user, the systemd unit, and `/var/api/glance.sock`. It does not delete files on NAS volume mounts.
