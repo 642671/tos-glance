@@ -1,0 +1,26 @@
+Glance TOS packaging
+====================
+
+This repository packages the official Glance dashboard for TerraMaster TOS 7
+as an iframe Deb application. It is a packaging wrapper, not the upstream
+Glance project itself, and it does not claim copyright in Glance.
+
+Upstream project
+----------------
+- Name: Glance
+- Repository: https://github.com/glanceapp/glance
+- Version packaged: v0.8.8
+- Official Linux binaries used unchanged:
+  - https://github.com/glanceapp/glance/releases/download/v0.8.8/glance-linux-amd64.tar.gz
+  - https://github.com/glanceapp/glance/releases/download/v0.8.8/glance-linux-arm64.tar.gz
+- Corresponding source: https://github.com/glanceapp/glance/archive/refs/tags/v0.8.8.tar.gz
+  and https://github.com/glanceapp/glance/tree/v0.8.8
+- License: GNU Affero General Public License v3.0 (see LICENSE)
+
+This packaging (systemd units, Unix-socket proxy, maintainer scripts, default
+configuration, and build scripts) is also released under the GNU Affero
+General Public License v3.0. The complete corresponding source for the
+packaging is this public repository.
+
+Glance is Copyright (c) the Glance authors. See the upstream repository for
+author and copyright notices.

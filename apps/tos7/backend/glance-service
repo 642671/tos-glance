@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+"""Start official Glance on 127.0.0.1 and proxy /var/api/glance.sock."""
+
+from __future__ import annotations
+
+import os
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from tos_unix_proxy import serve_proxy
+
+APP_ID = "glance"
+APP_DIR = Path("/usr/local/glance")
+UPSTREAM = Path(os.environ.get("GLANCE_BIN") or APP_DIR / "bin" / "glance")
+DEFAULT_CONFIG = APP_DIR / "conf" / "glance.yml"
+CONFIG = Path(os.environ.get("GLANCE_CONFIG") or APP_DIR / "data" / "glance.yml")
+SOCKET_PATH = os.environ.get("APP_SOCKET_PATH") or f"/var/api/{APP_ID}.sock"
+LISTEN = os.environ.get("GLANCE_LISTEN") or "127.0.0.1"
+PORT = int(os.environ.get("GLANCE_PORT") or "18741")
+BASE_URL = os.environ.get("GLANCE_BASE_URL") or f"/{APP_ID}"
+
+
+def log(level: str, message: str) -> None:
+    print(f"[{APP_ID}] [{level}] {message}", flush=True)
+
+
+def ensure_layout() -> None:
+    for path in (APP_DIR / "data", APP_DIR / "logs"):
+        path.mkdir(parents=True, exist_ok=True)
+    if not CONFIG.exists():
+        if not DEFAULT_CONFIG.is_file():
+            raise SystemExit(f"default config missing: {DEFAULT_CONFIG}")
+        CONFIG.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(DEFAULT_CONFIG, CONFIG)
+        log("INFO", f"installed default config at {CONFIG}")
+
+
+def wait_for_port(host: str, port: int, timeout: float = 20.0) -> None:
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            with socket.create_connection((host, port), timeout=0.4):
+                return
+        except OSError:
+            time.sleep(0.1)
+    raise SystemExit(f"Glance did not listen on {host}:{port} within {timeout}s")
+
+
+def main() -> int:
+    os.environ.setdefault("GLANCE_LISTEN", LISTEN)
+    os.environ.setdefault("GLANCE_PORT", str(PORT))
+    os.environ.setdefault("GLANCE_BASE_URL", BASE_URL)
+    ensure_layout()
+    if not UPSTREAM.is_file():
+        raise SystemExit(f"upstream binary missing: {UPSTREAM}")
+    proc = subprocess.Popen(
+        [str(UPSTREAM), "-config", str(CONFIG)],
+        cwd=str(APP_DIR),
+        env=os.environ.copy(),
+    )
+
+    def shutdown(_signum=None, _frame=None) -> None:
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=8)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait(timeout=2)
+
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
+    try:
+        if proc.poll() is not None:
+            log("ERROR", f"Glance exited immediately with {proc.returncode}")
+            return proc.returncode or 1
+        wait_for_port(LISTEN, PORT)
+        log("INFO", f"Glance is listening on {LISTEN}:{PORT}")
+        try:
+            return serve_proxy(
+                SOCKET_PATH,
+                LISTEN,
+                PORT,
+                strip_prefix=BASE_URL,
+                socket_mode=0o660,
+            )
+        finally:
+            shutdown()
+            if os.path.lexists(SOCKET_PATH):
+                try:
+                    os.unlink(SOCKET_PATH)
+                except OSError:
+                    pass
+    except Exception:
+        shutdown()
+        raise
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

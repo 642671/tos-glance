@@ -1,0 +1,63 @@
+server:
+  host: ${GLANCE_LISTEN}
+  port: ${GLANCE_PORT}
+  proxied: true
+  base-url: ${GLANCE_BASE_URL}
+
+branding:
+  custom-footer: |
+    <p>Powered by <a href="https://github.com/glanceapp/glance">Glance</a> (AGPL-3.0). TOS packaging: <a href="https://github.com/642671/tos-glance">tos-glance</a>.</p>
+
+pages:
+  - name: Home
+    columns:
+      - size: small
+        widgets:
+          - type: calendar
+            first-day-of-week: monday
+
+          - type: clock
+            hour-format: 24h
+
+          - type: weather
+            location: Shanghai, China
+            units: metric
+            hour-format: 24h
+
+          - type: bookmarks
+            title: Links
+            groups:
+              - title: General
+                links:
+                  - title: Glance documentation
+                    url: https://github.com/glanceapp/glance
+                  - title: TOS packaging
+                    url: https://github.com/642671/tos-glance
+                  - title: TerraMaster help
+                    url: https://help.terra-master.com/
+
+      - size: full
+        widgets:
+          - type: rss
+            limit: 10
+            collapse-after: 5
+            cache: 12h
+            feeds:
+              - url: https://selfh.st/rss/
+                title: selfh.st
+              - url: https://github.com/glanceapp/glance/releases.atom
+                title: Glance releases
+
+          - type: group
+            widgets:
+              - type: hacker-news
+              - type: lobsters
+
+      - size: small
+        widgets:
+          - type: releases
+            cache: 1d
+            repositories:
+              - glanceapp/glance
+              - gtsteffaniak/filebrowser
+              - syncthing/syncthing

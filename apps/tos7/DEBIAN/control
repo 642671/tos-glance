@@ -1,0 +1,10 @@
+Package: glance
+Version: 0.8.8
+Architecture: amd64
+Section: utils
+Priority: optional
+Maintainer: qishiyi <qishiyi77@gmail.com>
+Depends: python3 (>= 3.10), systemd
+Description: Glance dashboard for TOS 7
+ TOS 7 packaging of the official Glance dashboard binary (AGPL-3.0).
+ This package is a wrapper and does not claim upstream copyright.

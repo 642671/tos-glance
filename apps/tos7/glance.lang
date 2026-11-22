@@ -1,0 +1,97 @@
+[zh-cn]
+name = "Glance 仪表盘"
+auth = "qishiyi"
+descript = "把常用资讯、日历、书签和订阅放到一个轻量首页，适合在 TOS 窗口中打开。"
+release_note = "0.8.8：首次以官方 Glance v0.8.8 Linux 二进制打包为 TOS 7 iframe Deb 应用，提供 x86_64 与 aarch64 版本。"
+important = "本应用是官方 Glance（AGPL-3.0）的 TOS 套壳，不会声称拥有上游著作权。默认配置可在 /usr/local/glance/data/glance.yml 自行修改。"
+
+[zh-hk]
+name = "Glance 儀表板"
+auth = "qishiyi"
+descript = "把常用資訊、日曆、書籤和訂閱放到一個輕量首頁，適合在 TOS 視窗中開啟。"
+release_note = "0.8.8：首次以官方 Glance v0.8.8 Linux 二進位檔打包為 TOS 7 iframe Deb 應用，提供 x86_64 與 aarch64 版本。"
+important = "本應用是官方 Glance（AGPL-3.0）的 TOS 套殼，不會聲稱擁有上游著作權。預設設定可在 /usr/local/glance/data/glance.yml 自行修改。"
+
+[en-us]
+name = "Glance"
+auth = "qishiyi"
+descript = "A lightweight homepage dashboard with calendar, bookmarks, feeds, and other widgets, opened in a TOS window."
+release_note = "0.8.8: first TOS 7 iframe Deb packaging of the official Glance v0.8.8 Linux binaries, for x86_64 and aarch64."
+important = "This app is a TOS wrapper of official Glance (AGPL-3.0) and does not claim upstream copyright. Edit /usr/local/glance/data/glance.yml to customize the dashboard."
+
+[fr-fr]
+name = "Glance"
+auth = "qishiyi"
+descript = "Un tableau de bord leger avec calendrier, signets, flux et autres widgets, dans une fenetre TOS."
+release_note = "0.8.8 : premier empaquetage TOS 7 iframe Deb des binaires Linux officiels Glance v0.8.8, pour x86_64 et aarch64."
+important = "Cette application est une enveloppe TOS de Glance officiel (AGPL-3.0) et ne revendique pas le droit d'auteur amont. Modifiez /usr/local/glance/data/glance.yml pour personnaliser."
+
+[de-de]
+name = "Glance"
+auth = "qishiyi"
+descript = "Ein leichtes Startseiten-Dashboard mit Kalender, Lesezeichen, Feeds und weiteren Widgets im TOS-Fenster."
+release_note = "0.8.8: erste TOS-7-iframe-Deb-Pakete der offiziellen Glance-v0.8.8-Linux-Binaries fuer x86_64 und aarch64."
+important = "Diese App ist eine TOS-Huelle fuer das offizielle Glance (AGPL-3.0) und beansprucht kein Upstream-Urheberrecht. Anpassen unter /usr/local/glance/data/glance.yml."
+
+[it-it]
+name = "Glance"
+auth = "qishiyi"
+descript = "Una dashboard leggera con calendario, segnalibri, feed e altri widget, aperta in una finestra TOS."
+release_note = "0.8.8: primo pacchetto TOS 7 iframe Deb dei binari Linux ufficiali Glance v0.8.8, per x86_64 e aarch64."
+important = "Questa app e un wrapper TOS di Glance ufficiale (AGPL-3.0) e non rivendica il copyright upstream. Personalizza /usr/local/glance/data/glance.yml."
+
+[es-es]
+name = "Glance"
+auth = "qishiyi"
+descript = "Un panel de inicio ligero con calendario, marcadores, fuentes y otros widgets, en una ventana TOS."
+release_note = "0.8.8: primer empaquetado TOS 7 iframe Deb de los binarios Linux oficiales de Glance v0.8.8, para x86_64 y aarch64."
+important = "Esta aplicacion es un envoltorio TOS de Glance oficial (AGPL-3.0) y no reclama el copyright original. Edite /usr/local/glance/data/glance.yml."
+
+[hu-hu]
+name = "Glance"
+auth = "qishiyi"
+descript = "Konnyu kezdolap naptarral, konyvjelzokkel, hirekkel es mas widgetekkel a TOS ablakban."
+release_note = "0.8.8: a hivatalos Glance v0.8.8 Linux binarisok elso TOS 7 iframe Deb csomagolasa x86_64 es aarch64 platformra."
+important = "Ez az alkalmazas a hivatalos Glance (AGPL-3.0) TOS burkolasa, es nem igenyli a felfelezo szerzoi jogot. Testreszabas: /usr/local/glance/data/glance.yml."
+
+[ja-jp]
+name = "Glance"
+auth = "qishiyi"
+descript = "カレンダー、ブックマーク、フィードなどのウィジェットをまとめた軽量ホームページを TOS ウィンドウで開きます。"
+release_note = "0.8.8：公式 Glance v0.8.8 Linux バイナリを TOS 7 iframe Deb として初めてパッケージ化し、x86_64 と aarch64 を提供します。"
+important = "本アプリは公式 Glance（AGPL-3.0）の TOS ラッパーであり、上流の著作権を主張しません。設定は /usr/local/glance/data/glance.yml で変更できます。"
+
+[ko-kr]
+name = "Glance"
+auth = "qishiyi"
+descript = "달력, 북마크, 피드 등 위젯을 모은 가벼운 홈 대시보드를 TOS 창에서 엽니다."
+release_note = "0.8.8: 공식 Glance v0.8.8 Linux 바이너리를 TOS 7 iframe Deb로 처음 패키징하며 x86_64와 aarch64를 제공합니다."
+important = "이 앱은 공식 Glance(AGPL-3.0)의 TOS 래퍼이며 업스트림 저작권을 주장하지 않습니다. /usr/local/glance/data/glance.yml 에서 설정할 수 있습니다."
+
+[pl-pl]
+name = "Glance"
+auth = "qishiyi"
+descript = "Lekki pulpit startowy z kalendarzem, zakladkami, kanalami i innymi widgetami w oknie TOS."
+release_note = "0.8.8: pierwsze pakiety TOS 7 iframe Deb oficjalnych binariow Linux Glance v0.8.8 dla x86_64 i aarch64."
+important = "Ta aplikacja to opakowanie TOS oficjalnego Glance (AGPL-3.0) i nie rosci sobie praw autorskich upstream. Edytuj /usr/local/glance/data/glance.yml."
+
+[ru-ru]
+name = "Glance"
+auth = "qishiyi"
+descript = "Легкая домашняя панель с календарем, закладками, лентами и другими виджетами в окне TOS."
+release_note = "0.8.8: первая упаковка официальных Linux-бинарников Glance v0.8.8 в TOS 7 iframe Deb для x86_64 и aarch64."
+important = "Это TOS-обёртка официального Glance (AGPL-3.0); авторские права upstream не присваиваются. Настройте /usr/local/glance/data/glance.yml."
+
+[tr-tr]
+name = "Glance"
+auth = "qishiyi"
+descript = "Takvim, yer imleri, akislar ve diger bilesenlerle hafif bir ana sayfa panosu; TOS penceresinde acilir."
+release_note = "0.8.8: resmi Glance v0.8.8 Linux ikililerinin ilk TOS 7 iframe Deb paketlemesi, x86_64 ve aarch64 icin."
+important = "Bu uygulama resmi Glance (AGPL-3.0) icin bir TOS sarmalayicisidir ve ust akim telif hakkini sahiplenmez. /usr/local/glance/data/glance.yml dosyasini duzenleyin."
+
+[pt-pt]
+name = "Glance"
+auth = "qishiyi"
+descript = "Um painel inicial leve com calendario, favoritos, fontes e outros widgets, numa janela TOS."
+release_note = "0.8.8: primeira embalagem TOS 7 iframe Deb dos binarios Linux oficiais do Glance v0.8.8, para x86_64 e aarch64."
+important = "Esta aplicacao e um invólucro TOS do Glance oficial (AGPL-3.0) e nao reivindica o copyright original. Edite /usr/local/glance/data/glance.yml."

@@ -1,0 +1,17 @@
+# Build outputs and upstream caches — never commit these.
+/apps/tos7/build/
+/apps/tos7/dist/
+/dist/
+/build/
+/upstream-cache/
+*.deb
+*.deb.sha256
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.log
+.env
+*.token
+tdp-*.json
+.tdp_curlrc
