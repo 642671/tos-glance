@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import bz2
 import gzip
 import hashlib
 import io
@@ -25,10 +26,13 @@ ROOT = Path(__file__).resolve().parent
 APP_ID = "glance"
 APP_USER = "glance"
 SYSTEM_ID = "glance-system"
-PACKAGE_VERSION = "0.8.9"
+PACKAGE_VERSION = "0.8.10"
 UPSTREAM_TAG = "v0.8.8"
 UPSTREAM_BIN_NAME = "glance"
 DEFAULT_CONF_NAME = "glance.yml"
+FRONTEND_DIR = ROOT / "frontend"
+WEBUI_ARCHIVE_NAME = "webui.bz2"
+PROXY_PREFIX = f"/v2/proxy/{APP_ID}"
 PLATFORM_ARCH = {"x86_64": "amd64", "aarch64": "arm64"}
 EXECUTABLE_NAMES = {
     "glance-service",
@@ -68,7 +72,7 @@ REQUIRED_LANGUAGES = {
     "tr-tr",
     "pt-pt",
 }
-REQUIRED_LANG_FIELDS = {"name", "auth", "descript"}
+REQUIRED_LANG_FIELDS = {"name", "auth", "descript", "release_note"}
 MTIME = 1_704_067_200
 ICON_MTIME_EPOCH = 1_792_627_200
 
@@ -134,9 +138,14 @@ def validate_config(config: dict, version: str) -> None:
         raise SystemExit("config.ini must not contain open_path with type=iframe")
     if config.get("platform") not in PLATFORM_ARCH:
         raise SystemExit("config.ini platform must be x86_64 or aarch64")
+    help_url = config.get("help")
+    if not isinstance(help_url, str) or not help_url.startswith("https://"):
+        raise SystemExit("config.ini help must be an HTTPS documentation URL")
+    if "docs/PRIVACY.md" in help_url:
+        raise SystemExit("config.ini help must not use the privacy policy page")
 
 
-def validate_language(path: Path) -> None:
+def validate_language(path: Path, version: str) -> None:
     import configparser
 
     parser = configparser.ConfigParser(interpolation=None)
@@ -153,6 +162,11 @@ def validate_language(path: Path) -> None:
         for field in REQUIRED_LANG_FIELDS:
             if not parser[section].get(field, "").strip():
                 raise SystemExit(f"language section {section} is missing {field}")
+        release_note = parser[section].get("release_note", "").strip().strip('"')
+        if not release_note.startswith(version):
+            raise SystemExit(
+                f"language section {section} release_note must start with {version}"
+            )
 
 
 def validate_icon(path: Path) -> None:
@@ -256,6 +270,38 @@ def make_tar_gz(
         make_tar_bytes(entries, mtime_overrides=mtime_overrides),
         compresslevel=9,
         mtime=0,
+    )
+
+
+def make_webui_archive(version: str) -> bytes:
+    if not FRONTEND_DIR.is_dir():
+        raise SystemExit(f"frontend directory not found: {FRONTEND_DIR}")
+    entries: list[tuple[Path, str]] = []
+    overrides: dict[str, bytes] = {}
+    token = b"__APP_VERSION__"
+    for source in sorted(FRONTEND_DIR.rglob("*")):
+        if not source.is_file():
+            continue
+        relative = source.relative_to(FRONTEND_DIR).as_posix()
+        archive_name = f"./{relative}"
+        entries.append((source, archive_name))
+        if source.suffix.lower() in {".html", ".js", ".css"}:
+            original = normalize_lf(source)
+            data = original.replace(token, version.encode("ascii"))
+            if (
+                source.suffix.lower() != ".css"
+                and token not in original
+                and f"?v={version}".encode("ascii") not in data
+            ):
+                raise SystemExit(
+                    f"{relative} must use ?v={version} for cache busting"
+                )
+            overrides[archive_name] = data
+    if not entries:
+        raise SystemExit("frontend directory contains no files")
+    return bz2.compress(
+        make_tar_bytes(entries, content_overrides=overrides),
+        compresslevel=9,
     )
 
 
@@ -365,6 +411,13 @@ def extract_upstream_binary(archive: Path, platform: str, dest: Path) -> None:
         raise SystemExit(f"upstream binary looks too small: {dest}")
 
 
+def read_tar_text(archive: tarfile.TarFile, name: str) -> str:
+    member = archive.extractfile(name)
+    if member is None:
+        raise SystemExit(f"cannot read {name} from archive")
+    return member.read().decode("utf-8")
+
+
 def verify_package(path: Path, platform: str, version: str) -> None:
     members = read_ar(path)
     if set(members) != {"debian-binary", "control.tar.gz", "data.tar.gz"}:
@@ -390,6 +443,22 @@ def verify_package(path: Path, platform: str, version: str) -> None:
         for script_name in ("./postinst", "./prerm", "./postrm"):
             if not control.getmember(script_name).mode & 0o111:
                 raise SystemExit(f"{script_name} is not executable")
+        postinst_text = read_tar_text(control, "./postinst")
+        if "tar -xjf" not in postinst_text:
+            raise SystemExit("postinst must re-extract webui.bz2 on every install")
+        if "index.html" not in postinst_text:
+            raise SystemExit("postinst must verify the extracted WebUI index")
+        if "/etc/nginx/conf.d/${APP_ID}.conf" not in postinst_text:
+            raise SystemExit("postinst must deploy the portal nginx route")
+        if "nginx -t" not in postinst_text:
+            raise SystemExit("postinst must validate nginx before reloading")
+        postrm_text = read_tar_text(control, "./postrm")
+        if "readlink -f" not in postrm_text:
+            raise SystemExit("postrm must resolve an app-owned volume symlink")
+        if f"/Volume[1-9]/@apps/{APP_ID}" not in postrm_text:
+            raise SystemExit("postrm must clean the exact TOS volume app target")
+        if "/etc/nginx/conf.d/${APP_ID}.conf" not in postrm_text:
+            raise SystemExit("postrm must remove the portal nginx route")
 
     with tarfile.open(
         fileobj=io.BytesIO(members["data.tar.gz"]), mode="r:gz"
@@ -408,6 +477,9 @@ def verify_package(path: Path, platform: str, version: str) -> None:
             f"./usr/local/{APP_ID}/init.d/{SYSTEM_ID}.service",
             f"./usr/local/{APP_ID}/conf/{DEFAULT_CONF_NAME}",
             f"./usr/local/{APP_ID}/docs/PRIVACY.md",
+            f"./usr/local/{APP_ID}/BUILD_PROVENANCE.md",
+            f"./usr/local/{APP_ID}/nginx/{APP_ID}.conf",
+            f"./usr/local/{APP_ID}/{WEBUI_ARCHIVE_NAME}",
         }
         missing = required - data_names
         if missing:
@@ -419,8 +491,12 @@ def verify_package(path: Path, platform: str, version: str) -> None:
         if packaged.get("platform") != platform or packaged.get("version") != version:
             raise SystemExit("packaged config platform/version mismatch")
         help_url = packaged.get("help")
-        if not isinstance(help_url, str) or "docs/PRIVACY.md" not in help_url:
-            raise SystemExit("packaged config.ini help must point to the privacy policy")
+        if (
+            not isinstance(help_url, str)
+            or not help_url.startswith("https://")
+            or "docs/PRIVACY.md" in help_url
+        ):
+            raise SystemExit("packaged config.ini help must point to documentation")
         for name in (f"{APP_ID}-service", UPSTREAM_BIN_NAME):
             entry = data.getmember(f"./usr/local/{APP_ID}/bin/{name}")
             if not entry.mode & 0o111:
@@ -428,6 +504,96 @@ def verify_package(path: Path, platform: str, version: str) -> None:
         icon = data.getmember(f"./usr/local/{APP_ID}/images/icons/{APP_ID}.svg")
         if icon.mtime != release_icon_mtime(version):
             raise SystemExit("icon modification time was not version-busted")
+
+        unit_text = read_tar_text(
+            data, f"./usr/local/{APP_ID}/init.d/{SYSTEM_ID}.service"
+        )
+        if "NoNewPrivileges=true" not in unit_text:
+            raise SystemExit("unit must set NoNewPrivileges=true")
+        if "PrivateTmp=true" in unit_text:
+            raise SystemExit("unit must not enable PrivateTmp")
+        if "TimeoutStopSec=10" not in unit_text:
+            raise SystemExit("unit must use TimeoutStopSec=10")
+        if "Restart=" in unit_text:
+            raise SystemExit("unit must not configure Restart= for TOS reviews")
+        read_write = next(
+            (
+                line.split("=", 1)[1]
+                for line in unit_text.splitlines()
+                if line.startswith("ReadWritePaths=")
+            ),
+            "",
+        )
+        raw_read_write = read_write.split()
+        read_write_paths = {entry.lstrip("-") for entry in raw_read_write}
+        required_writable = {
+            f"/usr/local/{APP_ID}/data",
+            f"/usr/local/{APP_ID}/logs",
+            "/var/api",
+            "/Volume1",
+        }
+        missing_writable = required_writable - read_write_paths
+        if missing_writable:
+            raise SystemExit(
+                "unit ReadWritePaths is missing: "
+                + ", ".join(sorted(missing_writable))
+            )
+        if "/mnt" in raw_read_write:
+            raise SystemExit("unit must not require /mnt; use the optional -/mnt form")
+        if "-/mnt" not in raw_read_write:
+            raise SystemExit("unit must keep legacy /mnt writable when it exists")
+
+        env_text = read_tar_text(data, f"./usr/local/{APP_ID}/{APP_ID}.env")
+        if "PYTHONDONTWRITEBYTECODE=1" not in env_text:
+            raise SystemExit("service environment must disable Python bytecode writes")
+        if f"GLANCE_BASE_URL={PROXY_PREFIX}" not in env_text:
+            raise SystemExit("service environment must use the TOS proxy prefix")
+
+        default_config = read_tar_text(
+            data, f"./usr/local/{APP_ID}/conf/{DEFAULT_CONF_NAME}"
+        )
+        if "base-url: ${GLANCE_BASE_URL}" not in default_config:
+            raise SystemExit("default config must read GLANCE_BASE_URL")
+        if "proxied: true" not in default_config:
+            raise SystemExit("default config must enable proxy header handling")
+
+        provenance = read_tar_text(
+            data, f"./usr/local/{APP_ID}/BUILD_PROVENANCE.md"
+        )
+        if UPSTREAM_TAG not in provenance or version not in provenance:
+            raise SystemExit(
+                "BUILD_PROVENANCE.md must name the upstream tag and wrapper version"
+            )
+
+        nginx_conf = read_tar_text(
+            data, f"./usr/local/{APP_ID}/nginx/{APP_ID}.conf"
+        )
+        if "location ^~ /glance/" not in nginx_conf:
+            raise SystemExit("nginx route must serve /glance/")
+        if f"alias /usr/local/{APP_ID}/webui/" not in nginx_conf:
+            raise SystemExit("nginx route must point at the extracted WebUI")
+
+        webui_member = data.extractfile(f"./usr/local/{APP_ID}/{WEBUI_ARCHIVE_NAME}")
+        if webui_member is None:
+            raise SystemExit("webui.bz2 cannot be read")
+        try:
+            webui_tar_bytes = bz2.decompress(webui_member.read())
+        except OSError as exc:
+            raise SystemExit(f"webui.bz2 is not valid bzip2 data: {exc}") from exc
+        with tarfile.open(fileobj=io.BytesIO(webui_tar_bytes), mode="r:") as webui:
+            webui_names = {member.name for member in webui.getmembers()}
+            for asset in ("./index.html", "./styles.css", "./app.js"):
+                if asset not in webui_names:
+                    raise SystemExit(f"webui.bz2 is missing {asset}")
+            for asset in ("./index.html", "./styles.css", "./app.js"):
+                text = read_tar_text(webui, asset)
+                if "__APP_VERSION__" in text:
+                    raise SystemExit(f"webui asset {asset} still contains the version token")
+            index_text = read_tar_text(webui, "./index.html")
+            if version not in index_text:
+                raise SystemExit("webui index.html does not reference the package version")
+            if f"{PROXY_PREFIX}/?v={version}" not in index_text:
+                raise SystemExit("webui index.html must point the iframe at the proxy prefix")
 
 
 def run_dpkg_inspection(path: Path) -> None:
@@ -443,6 +609,10 @@ def run_dpkg_inspection(path: Path) -> None:
         raise SystemExit("dpkg-deb --info is missing the package version")
     if f"./usr/local/{APP_ID}/bin/{UPSTREAM_BIN_NAME}" not in contents:
         raise SystemExit("dpkg-deb --contents is missing the upstream binary")
+    if f"./usr/local/{APP_ID}/{WEBUI_ARCHIVE_NAME}" not in contents:
+        raise SystemExit("dpkg-deb --contents is missing webui.bz2")
+    if f"./usr/local/{APP_ID}/nginx/{APP_ID}.conf" not in contents:
+        raise SystemExit("dpkg-deb --contents is missing the portal nginx route")
     print("dpkg-deb --info/--contents: OK")
 
 
@@ -459,7 +629,7 @@ def build(platform: str, clean: bool) -> Path:
     version = read_version()
     config = read_json(ROOT / "config.ini")
     validate_config(config, version)
-    validate_language(ROOT / f"{APP_ID}.lang")
+    validate_language(ROOT / f"{APP_ID}.lang", version)
     validate_icon(ROOT / "images" / "icons" / f"{APP_ID}.svg")
 
     build_dir = ROOT / "build" / platform
@@ -484,6 +654,7 @@ def build(platform: str, clean: bool) -> Path:
         package_root / "conf",
         package_root / "images" / "icons",
         package_root / "init.d",
+        package_root / "nginx",
         package_root / "data",
         package_root / "logs",
         package_root / "docs",
@@ -515,6 +686,10 @@ def build(platform: str, clean: bool) -> Path:
         package_root / "init.d" / f"{SYSTEM_ID}.service",
     )
     shutil.copy2(
+        ROOT / "nginx" / f"{APP_ID}.conf",
+        package_root / "nginx" / f"{APP_ID}.conf",
+    )
+    shutil.copy2(
         ROOT / "backend" / f"{APP_ID}-service",
         package_root / "bin" / f"{APP_ID}-service",
     )
@@ -525,6 +700,11 @@ def build(platform: str, clean: bool) -> Path:
     shutil.copy2(
         ROOT / "conf" / DEFAULT_CONF_NAME,
         package_root / "conf" / DEFAULT_CONF_NAME,
+    )
+    (package_root / WEBUI_ARCHIVE_NAME).write_bytes(make_webui_archive(version))
+    shutil.copy2(
+        ROOT / "BUILD_PROVENANCE.md",
+        package_root / "BUILD_PROVENANCE.md",
     )
 
     upstream_archive = fetch_upstream(platform)

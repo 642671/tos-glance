@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import os
 import select
+import signal
 import socket
 import socketserver
 import sys
@@ -59,6 +60,33 @@ def rewrite_path(raw_path: str, strip_prefix: str) -> str:
         rewritten = raw_path[len(prefix) :]
         return rewritten if rewritten else "/"
     return raw_path
+
+
+def ensure_path_prefix(
+    raw_path: str,
+    prefix: str,
+    aliases: Iterable[str] = (),
+) -> str:
+    """Ensure the upstream sees the path configured as its proxy base."""
+    if not prefix:
+        return raw_path
+    path, separator, query = raw_path.partition("?")
+    base = "/" + prefix.strip("/")
+    if path == base or path.startswith(base + "/"):
+        return raw_path
+    for raw_alias in aliases:
+        alias = "/" + raw_alias.strip("/")
+        if path == alias or path.startswith(alias + "/"):
+            suffix = path[len(alias) :]
+            if suffix == base or suffix.startswith(base + "/"):
+                path = suffix
+            else:
+                path = base + (suffix if suffix.startswith("/") else "/" + suffix)
+            return path + (separator + query if separator else "")
+    if not path.startswith("/"):
+        path = "/" + path
+    path = base + path if path != "/" else base + "/"
+    return path + (separator + query if separator else "")
 
 
 def _read_headers(sock: socket.socket, limit: int = 1024 * 1024) -> bytes:
@@ -239,6 +267,11 @@ class ProxyHandler(socketserver.StreamRequestHandler):
             path = raw_target
 
         new_path = rewrite_path(path, self.server.strip_prefix)
+        new_path = ensure_path_prefix(
+            new_path,
+            self.server.path_prefix,
+            self.server.path_aliases,
+        )
         connection_value = headers.get("connection", "")
         incoming = _header_list(block)
         outgoing: list[tuple[str, str]] = []
@@ -342,11 +375,15 @@ class ThreadingUnixProxy(socketserver.ThreadingMixIn, socketserver.UnixStreamSer
         backend_port: int,
         strip_prefix: str = "",
         socket_mode: int = 0o660,
+        path_prefix: str = "",
+        path_aliases: Iterable[str] = (),
     ) -> None:
         prepare_socket(socket_path, socket_mode)
         self.backend_host = backend_host
         self.backend_port = backend_port
         self.strip_prefix = strip_prefix.rstrip("/")
+        self.path_prefix = path_prefix.rstrip("/")
+        self.path_aliases = tuple(path_aliases)
         self.socket_path = socket_path
         self.socket_mode = socket_mode
         super().__init__(socket_path, ProxyHandler)
@@ -370,6 +407,9 @@ def serve_proxy(
     backend_port: int,
     strip_prefix: str = "",
     socket_mode: int = 0o660,
+    path_prefix: str = "",
+    path_aliases: Iterable[str] = (),
+    stop_event: threading.Event | None = None,
 ) -> int:
     server = ThreadingUnixProxy(
         socket_path,
@@ -377,19 +417,39 @@ def serve_proxy(
         backend_port,
         strip_prefix=strip_prefix,
         socket_mode=socket_mode,
+        path_prefix=path_prefix,
+        path_aliases=path_aliases,
     )
     log(
         "INFO",
         f"proxying {socket_path} -> {backend_host}:{backend_port} "
         f"strip_prefix={strip_prefix or '-'}",
     )
+    worker = threading.Thread(
+        target=server.serve_forever,
+        name="tos-unix-proxy",
+        daemon=True,
+    )
+    worker.start()
     try:
-        server.serve_forever()
+        while worker.is_alive():
+            if stop_event is None:
+                worker.join(timeout=0.5)
+            elif stop_event.wait(timeout=0.5):
+                break
     except KeyboardInterrupt:
-        pass
+        if stop_event is not None:
+            stop_event.set()
     finally:
-        server.shutdown()
+        shutdown_thread = threading.Thread(
+            target=server.shutdown,
+            name="tos-unix-proxy-shutdown",
+            daemon=True,
+        )
+        shutdown_thread.start()
+        shutdown_thread.join(timeout=3)
         server.server_close()
+        worker.join(timeout=2)
     return 0
 
 
@@ -402,12 +462,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--socket-mode", default="660")
     args = parser.parse_args(argv)
     mode = int(args.socket_mode, 8) if str(args.socket_mode).startswith("0") or len(str(args.socket_mode)) == 3 else int(args.socket_mode)
+    stop_event = threading.Event()
+
+    def request_shutdown(signum=None, _frame=None) -> None:
+        log("INFO", f"received signal {signum}; stopping")
+        stop_event.set()
+
+    signal.signal(signal.SIGTERM, request_shutdown)
+    signal.signal(signal.SIGINT, request_shutdown)
     return serve_proxy(
         args.socket,
         args.backend_host,
         args.backend_port,
         strip_prefix=args.strip_prefix,
         socket_mode=mode,
+        stop_event=stop_event,
     )
 
 

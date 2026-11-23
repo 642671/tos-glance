@@ -30,9 +30,29 @@ If you do not add widgets that contact external sites, Glance stays a local dash
 
 Anyone who can sign in to TOS and open the application can see the dashboard configured on that NAS.
 
+## Sharing and third parties
+
+The wrapper publisher does not sell dashboard data, share it with advertisers, or operate a remote account service for the application. Data is shared with a third party only when the NAS administrator configures a widget or link that sends a request to that third party, or when the administrator deliberately exports or publishes information from the dashboard.
+
+## Security
+
+Glance listens only on the loopback interface. TOS reaches it through the local Unix socket `/var/api/glance.sock`, and the systemd unit runs as the dedicated `glance` service user with sandbox restrictions. Access to the dashboard is therefore governed by TOS sign-in and the permissions of the NAS account. Administrators should protect their TOS credentials, keep TOS and Glance updated, and review custom widget URLs before saving configuration that contains secrets.
+
+## International transfers
+
+The wrapper does not transfer dashboard data internationally on its own. If a configured widget contacts an external service, that request may leave the NAS and may be processed in another country under that service's own policy.
+
+## Children
+
+The application is intended for NAS administration and general dashboard use. It is not directed to children, and the wrapper does not knowingly collect personal information from children.
+
 ## Retention and uninstall
 
-Configuration remains on the NAS until the user changes or deletes it, or uninstalls the application. Uninstalling the package stops the service and removes this application's own configuration, cache, logs, Unix socket, systemd unit, and service user under `/usr/local/glance`. It does not delete unrelated user files on shared storage volumes.
+Configuration remains on the NAS until the user changes or deletes it, or uninstalls the application. Uninstalling the package stops the service and removes this application's own configuration, cache, logs, Unix socket, systemd unit, and service user. When TOS exposes the app through `/usr/local/glance`, the package also removes the exact app-owned `/Volume1/@apps/glance` target if that is the symlink destination. It does not delete unrelated user files on shared storage volumes.
+
+## Contact
+
+Privacy questions about this wrapper can be opened as issues at https://github.com/642671/tos-glance/issues. This is an independent packaging project and is not a TerraMaster official application.
 
 ## Changes
 

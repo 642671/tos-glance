@@ -9,6 +9,10 @@ UNIT_SRC="${APP_DIR}/init.d/${SYSTEM_ID}.service"
 UNIT_DST="/etc/systemd/system/${SYSTEM_ID}.service"
 LAUNCHER="${APP_DIR}/bin/${APP_ID}-service"
 UPSTREAM_BIN="${APP_DIR}/bin/glance"
+WEBUI_ARCHIVE="${APP_DIR}/webui.bz2"
+WEBUI_DIR="${APP_DIR}/webui"
+NGINX_CONF_SRC="${APP_DIR}/nginx/${APP_ID}.conf"
+NGINX_CONF_DST="/etc/nginx/conf.d/${APP_ID}.conf"
 SOCKET_PATH="/var/api/${APP_ID}.sock"
 LOG_DIR="${APP_DIR}/logs"
 DIAG_FILE="${LOG_DIR}/postinst-diagnostic.txt"
@@ -32,6 +36,9 @@ collect_diagnostics() {
         ls -l "${LAUNCHER}" 2>&1 || printf '%s missing\n' "${LAUNCHER}"
         ls -l "${UPSTREAM_BIN}" 2>&1 || printf '%s missing\n' "${UPSTREAM_BIN}"
         ls -l "${UNIT_SRC}" 2>&1 || printf '%s missing\n' "${UNIT_SRC}"
+        printf '\n=== packaged webui ===\n'
+        ls -l "${WEBUI_ARCHIVE}" 2>&1 || printf '%s missing\n' "${WEBUI_ARCHIVE}"
+        ls -l "${WEBUI_DIR}/index.html" 2>&1 || printf '%s missing\n' "${WEBUI_DIR}/index.html"
         printf '\n=== unit state ===\n'
         systemctl is-active "${SYSTEM_ID}.service" 2>&1 || true
         systemctl status --no-pager -l "${SYSTEM_ID}.service" 2>&1 || true
@@ -91,6 +98,36 @@ case "$1" in
             chmod 0750 "${APP_DIR}/data" "${APP_DIR}/logs" 2>/dev/null || true
         fi
 
+        WEBUI_ERROR=""
+        if [ -f "${WEBUI_ARCHIVE}" ] && command -v tar >/dev/null 2>&1; then
+            # TOS keeps the first extracted webui directory across upgrades.
+            # Remove it and extract the exact archive shipped in this version.
+            rm -rf "${WEBUI_DIR}" 2>/dev/null || true
+            mkdir -p "${WEBUI_DIR}"
+            if ! tar -xjf "${WEBUI_ARCHIVE}" -C "${WEBUI_DIR}"; then
+                WEBUI_ERROR="webui.bz2 extraction failed"
+            fi
+            chown -R root:root "${WEBUI_DIR}" 2>/dev/null || true
+            chmod -R a+rX "${WEBUI_DIR}" 2>/dev/null || true
+        else
+            WEBUI_ERROR="webui.bz2 or tar is missing"
+        fi
+        if [ -z "${WEBUI_ERROR}" ] && [ ! -f "${WEBUI_DIR}/index.html" ]; then
+            WEBUI_ERROR="webui/index.html is missing after extraction"
+        fi
+
+        if [ -f "${NGINX_CONF_SRC}" ] && [ -d /etc/nginx/conf.d ]; then
+            cp -f "${NGINX_CONF_SRC}" "${NGINX_CONF_DST}" 2>/dev/null || true
+            if command -v nginx >/dev/null 2>&1 && nginx -t >/dev/null 2>&1; then
+                systemctl reload nginx 2>/dev/null \
+                    || nginx -s reload 2>/dev/null \
+                    || true
+                log INFO "portal route /glance/ deployed"
+            else
+                log WARN "nginx config check failed; /glance/ route not reloaded"
+            fi
+        fi
+
         if [ ! -d /var/api ]; then
             mkdir -p /var/api
             chmod 1777 /var/api 2>/dev/null || true
@@ -113,7 +150,7 @@ case "$1" in
                 systemctl start "${SYSTEM_ID}.service" || true
 
                 WAITED=0
-                while [ "${WAITED}" -lt 45 ]; do
+                while [ "${WAITED}" -lt 90 ]; do
                     if [ -S "${SOCKET_PATH}" ] \
                         && systemctl is-active --quiet "${SYSTEM_ID}.service"; then
                         break
@@ -123,11 +160,14 @@ case "$1" in
                 done
 
                 if systemctl is-active --quiet "${SYSTEM_ID}.service" \
-                    && [ -S "${SOCKET_PATH}" ]; then
+                    && [ -S "${SOCKET_PATH}" ] \
+                    && [ -f "${WEBUI_DIR}/index.html" ]; then
                     log INFO "service active, socket ready after ${WAITED}s"
+                elif [ -n "${WEBUI_ERROR}" ]; then
+                    collect_diagnostics "webui not ready: ${WEBUI_ERROR}"
                 else
                     collect_diagnostics \
-                        "installed but not serving after 45s"
+                        "installed but not serving after 90s"
                 fi
             fi
         fi

@@ -23,17 +23,17 @@ SendSIGKILL=yes
 ProtectSystem=strict
 ProtectHome=true
 ProtectControlGroups=true
+NoNewPrivileges=true
 
 # /var/api is a shared TOS directory and must remain writable for the
 # application-owned Unix socket. PrivateTmp is intentionally omitted.
-# Do not set Group=<appid>.
-ReadWritePaths=/usr/local/glance/data /usr/local/glance/logs /var/api
+# Volume paths are optional so a missing path cannot make the service fail
+# with 226/NAMESPACE. Do not set Group=<appid>.
+ReadWritePaths=/usr/local/glance/data /usr/local/glance/logs /var/api -/Volume1 -/Volume2 -/Volume3 -/Volume4 -/Volume5 -/Volume6 -/Volume7 -/Volume8 -/Volume9 -/mnt
 LimitNOFILE=65536
 LimitNPROC=256
 MemoryMax=256M
 CPUQuota=75%
-Restart=on-failure
-RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

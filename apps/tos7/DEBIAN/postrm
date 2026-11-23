@@ -16,7 +16,7 @@ fi
 
 rm -f "${UNIT_DST}" 2>/dev/null || true
 rm -f "/etc/systemd/system/multi-user.target.wants/${SYSTEM_ID}.service" 2>/dev/null || true
-rm -f "${SOCKET_PATH}" 2>/dev/null || true
+rm -f "/var/api/glance.sock" 2>/dev/null || true
 
 if [ -d /run/systemd/system ]; then
     systemctl daemon-reload || true
@@ -24,9 +24,26 @@ fi
 
 case "$1" in
     remove|purge)
+        rm -f "/etc/nginx/conf.d/${APP_ID}.conf" 2>/dev/null || true
+        if command -v nginx >/dev/null 2>&1 && nginx -t >/dev/null 2>&1; then
+            systemctl reload nginx 2>/dev/null \
+                || nginx -s reload 2>/dev/null \
+                || true
+        fi
         # Remove only this application's own files, socket, unit, and service
         # user. Never delete shared directories such as /var/api, and never
         # delete user volume data such as /mnt or /Volume1.
+        # TOS may install the app as a symlink into /Volume1/@apps/<appid>.
+        # Resolve that exact app-owned target so a manual dpkg purge does not
+        # leave configuration and cache behind, while refusing arbitrary links.
+        if [ -L "${APP_DIR}" ]; then
+            APP_REAL_DIR="$(readlink -f "${APP_DIR}" 2>/dev/null || true)"
+            case "${APP_REAL_DIR}" in
+                /Volume[1-9]/@apps/glance)
+                    rm -rf "${APP_REAL_DIR}" 2>/dev/null || true
+                    ;;
+            esac
+        fi
         rm -rf "${APP_DIR}" 2>/dev/null || true
         if getent passwd "${APP_USER}" >/dev/null 2>&1; then
             userdel "${APP_USER}" 2>/dev/null || true

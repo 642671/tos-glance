@@ -9,6 +9,7 @@ import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
 from pathlib import Path
 
@@ -22,7 +23,8 @@ CONFIG = Path(os.environ.get("GLANCE_CONFIG") or APP_DIR / "data" / "glance.yml"
 SOCKET_PATH = os.environ.get("APP_SOCKET_PATH") or f"/var/api/{APP_ID}.sock"
 LISTEN = os.environ.get("GLANCE_LISTEN") or "127.0.0.1"
 PORT = int(os.environ.get("GLANCE_PORT") or "18741")
-BASE_URL = os.environ.get("GLANCE_BASE_URL") or f"/{APP_ID}"
+PROXY_PREFIX = f"/v2/proxy/{APP_ID}"
+BASE_URL = os.environ.get("GLANCE_BASE_URL") or PROXY_PREFIX
 
 
 def log(level: str, message: str) -> None:
@@ -40,15 +42,26 @@ def ensure_layout() -> None:
         log("INFO", f"installed default config at {CONFIG}")
 
 
-def wait_for_port(host: str, port: int, timeout: float = 20.0) -> None:
+def wait_for_port(
+    host: str,
+    port: int,
+    timeout: float = 90.0,
+    stop_event: threading.Event | None = None,
+) -> bool:
     deadline = time.time() + timeout
     while time.time() < deadline:
+        if stop_event is not None and stop_event.is_set():
+            return False
         try:
             with socket.create_connection((host, port), timeout=0.4):
-                return
+                return True
         except OSError:
-            time.sleep(0.1)
-    raise SystemExit(f"Glance did not listen on {host}:{port} within {timeout}s")
+            if stop_event is not None:
+                if stop_event.wait(0.1):
+                    return False
+            else:
+                time.sleep(0.1)
+    return False
 
 
 def main() -> int:
@@ -64,41 +77,57 @@ def main() -> int:
         env=os.environ.copy(),
     )
 
-    def shutdown(_signum=None, _frame=None) -> None:
+    stop_event = threading.Event()
+
+    def request_shutdown(signum=None, _frame=None) -> None:
+        log("INFO", f"received signal {signum}; stopping")
+        stop_event.set()
+
+    signal.signal(signal.SIGTERM, request_shutdown)
+    signal.signal(signal.SIGINT, request_shutdown)
+
+    def shutdown() -> None:
         if proc.poll() is None:
             proc.terminate()
             try:
-                proc.wait(timeout=8)
+                proc.wait(timeout=5)
             except subprocess.TimeoutExpired:
+                log("WARNING", "Glance ignored SIGTERM; sending SIGKILL")
                 proc.kill()
-                proc.wait(timeout=2)
+                try:
+                    proc.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    log("ERROR", "Glance did not exit after SIGKILL")
 
-    signal.signal(signal.SIGTERM, shutdown)
-    signal.signal(signal.SIGINT, shutdown)
     try:
         if proc.poll() is not None:
             log("ERROR", f"Glance exited immediately with {proc.returncode}")
             return proc.returncode or 1
-        wait_for_port(LISTEN, PORT)
+        log("INFO", f"waiting for Glance to listen (up to 90s)")
+        if not wait_for_port(LISTEN, PORT, stop_event=stop_event):
+            if stop_event.is_set():
+                log("INFO", "shutdown requested before startup completed")
+                return 0
+            raise SystemExit(f"Glance did not listen on {LISTEN}:{PORT} within 90s")
         log("INFO", f"Glance is listening on {LISTEN}:{PORT}")
-        try:
-            return serve_proxy(
-                SOCKET_PATH,
-                LISTEN,
-                PORT,
-                strip_prefix=BASE_URL,
-                socket_mode=0o660,
-            )
-        finally:
-            shutdown()
-            if os.path.lexists(SOCKET_PATH):
-                try:
-                    os.unlink(SOCKET_PATH)
-                except OSError:
-                    pass
-    except Exception:
+        # Glance generates URLs with server.base-url but expects the reverse
+        # proxy to strip that prefix before forwarding. The platform may pass
+        # either the full portal path or an already-stripped path.
+        return serve_proxy(
+            SOCKET_PATH,
+            LISTEN,
+            PORT,
+            strip_prefix=BASE_URL,
+            socket_mode=0o660,
+            stop_event=stop_event,
+        )
+    finally:
         shutdown()
-        raise
+        if os.path.lexists(SOCKET_PATH):
+            try:
+                os.unlink(SOCKET_PATH)
+            except OSError:
+                pass
 
 
 if __name__ == "__main__":

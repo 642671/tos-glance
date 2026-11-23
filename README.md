@@ -5,7 +5,7 @@ This is a **TerraMaster TOS 7 packaging wrapper** for the official
 
 It is not the upstream Glance project. The official Linux `x86_64` and
 `aarch64` binaries from the Glance v0.8.8 release are packaged unchanged.
-TOS package version `0.8.9` is a wrapper revision of those same upstream binaries.
+TOS package version `0.8.10` is a wrapper revision of those same upstream binaries.
 Copyright in Glance remains with the upstream authors. This repository only
 adds TOS 7 Deb packaging, a local Unix-socket reverse proxy, systemd units,
 a default configuration, and a [privacy policy](docs/PRIVACY.md).
@@ -22,6 +22,16 @@ The application is a TOS 7 iframe Deb (`kind=deb`, not Docker). The official
 Glance binary listens on `127.0.0.1` only. A thin Python 3.10+ standard-library
 proxy exposes it to the TOS portal through `/var/api/glance.sock` so the
 service is not published on a LAN port.
+
+The TOS application window is `/glance/`. The package builds `webui.bz2` from
+`apps/tos7/frontend`, and `postinst` extracts it to
+`/usr/local/glance/webui` on every install or upgrade. The launcher embeds
+`/v2/proxy/glance/`; Glance uses `/v2/proxy/glance` as its `server.base-url`,
+and the socket proxy strips that prefix before forwarding to loopback.
+`postinst` also deploys `nginx/glance.conf` to `/etc/nginx/conf.d/glance.conf`
+so the TOS portal serves `/glance/` from that extracted WebUI. The app center
+deploys this route during a store install; the packaging step makes a manual
+`dpkg -i` behave the same way instead of returning 404.
 
 The packaged application id is `glance`. Separate packages are built for
 `x86_64` and `aarch64`.
@@ -44,12 +54,15 @@ python3 build.py --platform aarch64 --twice
 
 `--twice` builds the package two times and fails if the `.deb` bytes differ.
 The builder also writes a `.sha256` sidecar and, when `dpkg-deb` is available,
-runs `dpkg-deb --info` and `dpkg-deb --contents`.
+runs `dpkg-deb --info` and `dpkg-deb --contents`. It also verifies that
+`webui.bz2` contains the launcher assets, the iframe points at the portal proxy
+prefix, the systemd unit has no `Restart=` and keeps `/mnt` optional, and the
+upstream provenance file is packaged.
 
 Output:
 
-- `apps/tos7/dist/glance_0.8.9_x86_64.deb`
-- `apps/tos7/dist/glance_0.8.9_aarch64.deb`
+- `apps/tos7/dist/glance_0.8.10_x86_64.deb`
+- `apps/tos7/dist/glance_0.8.10_aarch64.deb`
 
 Build directories, downloaded upstream binaries, and `.deb` files are gitignored
 and must not be committed.
@@ -70,4 +83,4 @@ under AGPL-3.0. This wrapper does not modify the official Glance binary.
 
 ## Privacy and uninstall
 
-The privacy policy is published at [docs/PRIVACY.md](docs/PRIVACY.md) and is also shipped inside the package. Uninstalling the application removes `/usr/local/glance`, the service user, the systemd unit, and `/var/api/glance.sock`. It does not delete files on NAS volume mounts.
+The privacy policy is published at [docs/PRIVACY.md](docs/PRIVACY.md) and is also shipped inside the package. Uninstalling the application removes `/usr/local/glance`, the service user, the systemd unit, and `/var/api/glance.sock`. If TOS installed the app as a symlink to `/Volume1/@apps/glance`, the package also removes that exact app-owned target; it does not delete unrelated user files on shared volumes.
