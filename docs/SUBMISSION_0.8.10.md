@@ -1,7 +1,8 @@
-# Glance 0.8.10 submission packet
+# Glance 0.8.10 submission record
 
-Status: **draft, not submitted**. Platform submission is blocked until the
-x86_64 and aarch64 packages both pass the complete real-device regression.
+Status: **x86_64 submitted and in review**. The x86_64 0.8.10 Version is
+`68b2810c-b143-4a42-aa13-8f83e2afa2be` (status 0). The aarch64 package is built
+and awaits an ARM real-device regression before submission.
 
 ## Review findings addressed
 
@@ -26,7 +27,7 @@ x86_64 and aarch64 packages both pass the complete real-device regression.
 - Pointed `help` at the rendered wrapper README (usage plus privacy links)
   instead of a GitHub file-browsing page, expanded the privacy policy, and
   synchronized all 14 `release_note` entries at 0.8.10.
-- `postrm` now resolves an app-owned `/Volume1/@apps/glance` symlink and removes
+- `postrm` resolves an app-owned `/Volume1/@apps/glance` symlink and removes
   that exact target during purge so manual uninstall does not leave app data.
 - Removed ASCII semicolons from all language values. The platform INI parser
   treats them as comment starts and truncates the Parse Result description and
@@ -40,14 +41,8 @@ x86_64 and aarch64 packages both pass the complete real-device regression.
 | aarch64 | `glance_0.8.10_aarch64.deb` | 5,736,950 | `76ca02c1c0695cd3023730d8bf3da7098eccac4c8a60c34f74942f0b2fe85cdc` |
 
 Both packages were built twice with `--twice`; consecutive builds were
-byte-identical.
-After the first x86_64 device pass, ASCII semicolons were removed from
-`glance.lang` because the platform INI parser treats them as comment starts
-(the same issue found in MiloVault), and `help` was changed from a GitHub
-file-browsing URL to the rendered wrapper README. Both packages were rebuilt.
-Runtime code is unchanged. These are metadata-only changes, but the runtime
-evidence predates the final bytes; re-run the x86_64 device check on these
-final packages when 189 is free.
+byte-identical. The final rebuild only changed metadata: the `help` URL and the
+removal of ASCII semicolons from `glance.lang`.
 
 ## Validation status
 
@@ -61,119 +56,62 @@ Local checks passed:
   a generated static asset returns 200, SIGTERM exits within one second, and
   the socket, port, and upstream process are gone
 
-aarch64 device smoke on 10.18.15.190 before the machine was reclaimed:
+x86_64 final-package regression on 10.18.15.189 (passed, 43/43 checks):
 
-- upgrade install completed in 18 seconds; `postinst` reported active and
-  socket ready after 1 second
-- service active, port 18741 listening, `/var/api/glance.sock` present
-- `/glance/` returned 302 to the TOS login page instead of 404; the launcher
-  CSS/JS also returned 302, and the socket returned 200 with assets under
-  `/v2/proxy/glance/static/...`
-- the machine was immediately purged on request; full stop/start/disable/
-  uninstall regression was not completed and does not count as a device pass
-
-x86_64 full regression on 10.18.15.189 (pre-final-metadata build; passed):
-
-- upgraded 0.8.9 to the final 0.8.10 package with `dpkg -i` (12 seconds; this
-  was the first 0.8.10 build), then reinstalled the final rebuilt package
-  (2 seconds) and did one fresh install on the purged machine (1 second)
+- remote `sha256sum` matched `8842f891...`; `dpkg -i` completed in 1 second
 - `postinst` reported service active and socket ready after 1 second; the unit
-  was active and enabled, port 18741 listened on 127.0.0.1, and
-  `/var/api/glance.sock` existed
-- device testing exposed the remaining portal root cause: the 0.8.9 and first
-  0.8.10 builds had no nginx route, so `/glance/` was 404. The final build
-  ships `nginx/glance.conf`; `postinst` deployed it, `nginx -t` passed, and
-  `/glance/`, `/glance/index.html`, the launcher CSS/JS, and
+  was active and enabled with `NRestarts=0`, port 18741 listened on
+  127.0.0.1, and `/var/api/glance.sock` existed
+- `/glance/` returned 200 (1,112 bytes) with the `Glance` title and
+  `/v2/proxy/glance/` reference; `/glance/index.html`, the launcher CSS/JS, and
   `/v2/proxy/glance/` all returned 200
 - graceful stop completed in 164 ms with no `timed out`/SIGKILL entries; the
   port closed, the socket and upstream process were gone
-- `systemctl disable`/`stop` left the unit inactive/disabled with the wants
-  symlink removed; `enable`/`start` restored active/enabled and portal 200
-- `dpkg --purge` completed in 1.3 seconds and left no unit, wants symlink,
-  nginx route, socket, port, process, `/usr/local/glance`,
+- `systemctl disable --now` left the unit inactive/disabled with the wants
+  symlink removed; `enable --now` restored active/enabled and portal 200
+- `dpkg --purge` completed in 1.275 seconds and left no package, unit, wants
+  symlink, nginx route, socket, port, process, `/usr/local/glance`,
   `/Volume1/@apps/glance`, or `glance` user/group; `nginx -t` still passed and
   `/glance/` returned 404 only because the app had been removed
 
-aarch64 full regression is pending on an available ARM test machine. Both
-device runs above predate the final metadata-only rebuild; final-byte x86_64
-re-check is also pending.
+aarch64 was only smoke-tested on 10.18.15.190 before that machine was reclaimed:
+install completed, the service was active, port 18741 listened, `webui.bz2` was
+extracted, and `/glance/` returned 302 instead of 404. Stop/start/disable/
+enable/purge did not complete, so it is not a device pass.
 
-## Release notes (GitHub `v0.8.10`)
+## Release
 
-```text
-Glance 0.8.10 for TOS 7 (wrapper revision; upstream binaries remain v0.8.8)
+- Tag `v0.8.10` on commit `6ccaa58`.
+- Release: https://github.com/642671/tos-glance/releases/tag/v0.8.10
+- Uploaded now: `glance_0.8.10_x86_64.deb` and its `.sha256` sidecar.
+- The aarch64 `.deb` and `.sha256` will be added after the ARM regression.
 
-- Fix the portal 404: ship nginx/glance.conf and deploy it from postinst
-  (validated with nginx -t), so /glance/ serves the extracted WebUI on manual
-  dpkg installs as well as store installs.
-- Ship the missing webui.bz2 launcher and re-extract it on every install and
-  upgrade; align the iframe, server.base-url, and socket proxy prefixes.
-- Add bounded SIGTERM shutdown with a 5-second grace period and SIGKILL
-  fallback; the socket is removed on stop.
-- Remove Restart=, add NoNewPrivileges=true, and keep volume and /mnt paths
-  optional to avoid 226/NAMESPACE.
-- Expand the privacy policy, point help at the rendered wrapper README (usage
-  and privacy links), and synchronize all 14 release_note entries.
-- Remove ASCII semicolons from language values so the platform INI parser does
-  not truncate the description or release notes.
-- Document prebuilt binary provenance (upstream tag, commit, workflow, hashes).
+Release notes in the GitHub Release and `glance.lang` cover the portal route,
+`webui.bz2`, proxy alignment, graceful shutdown, sandbox writable paths,
+privacy/help, INI punctuation, and binary provenance.
 
-Assets: glance_0.8.10_x86_64.deb and glance_0.8.10_aarch64.deb, each with a
-.sha256 sidecar.
-```
+## TDP record
 
-## Withdrawal prerequisites (0.8.9 in review)
+x86_64 (`b1e3aa9c-4df1-4a32-aee9-9aaa447aff8f`):
 
-| Platform | Version ID | Status |
-| --- | --- | --- |
-| x86_64 | `0a124ceb-de6c-41b2-a721-9c3a20516c46` | 0 (reviewing) |
-| aarch64 | `56a7fd94-0de1-4d4b-bf27-90c1a1b2df0a` | 0 (reviewing) |
+- 0.8.9 version `0a124ceb-de6c-41b2-a721-9c3a20516c46` withdrawn, status 4
+- 0.8.10 version `68b2810c-b143-4a42-aa13-8f83e2afa2be` status 0 (reviewing)
+- creation task `a891bd32-155d-4914-8dbe-bae9f41cfb7e`, `all_status=2`
+- Parse Result: name `Glance`, version `0.8.10`, platform `x86_64`, size
+  6,322,372, SHA-256 `8842f891a012109effcfd3ca3d7fb4d0e845897ab553b01562d47761caf22a42`,
+  and the full English release note
+- App record: `current_version=0.8.10`
 
-Withdraw each with `POST /v1/apps/{uuid}/versions/{version_id}/withdraw`
-and `{"comments":"..."}` (not DELETE) after both regressions pass, then submit
-0.8.10.
+aarch64 (`fe40eccf-109e-40c9-8cfe-e7b75991f07b`):
 
-Run only after both real-device regressions pass.
+- 0.8.9 version `56a7fd94-0de1-4d4b-bf27-90c1a1b2df0a` is still status 0
+- 0.8.10 is not submitted yet
 
-1. Commit the 0.8.10 changes on `main` and push to
-   `https://github.com/642671/tos-glance`.
-2. Create and push tag `v0.8.10`.
-3. Create the GitHub Release with the text above and attach
-   `dist/glance_0.8.10_x86_64.deb`, `dist/glance_0.8.10_x86_64.deb.sha256`,
-   `dist/glance_0.8.10_aarch64.deb`, and
-   `dist/glance_0.8.10_aarch64.deb.sha256`.
-4. Submit both architectures with `POST /v1/apps/{uuid}/versions` using the
-   payloads below, then poll the task.
-5. Check the Parse Result against the expected values: name `Glance`, version
-   `0.8.10`, architecture `amd64`/`arm64`, size 6,322,372 / 5,736,950 bytes,
-   the SHA-256 values above, and the full 0.8.10 release note.
-6. Confirm only when both Parse Results match. If either one differs, stop and
-   report instead of confirming.
+## Remaining steps
 
-```bash
-git push origin main
-git tag v0.8.10
-git push origin v0.8.10
-gh release create v0.8.10 \
-  apps/tos7/dist/glance_0.8.10_x86_64.deb \
-  apps/tos7/dist/glance_0.8.10_x86_64.deb.sha256 \
-  apps/tos7/dist/glance_0.8.10_aarch64.deb \
-  apps/tos7/dist/glance_0.8.10_aarch64.deb.sha256 \
-  --title "Glance 0.8.10 for TOS 7" \
-  --notes-file <release-notes.txt>
-```
-
-## TDP submission draft
-
-Do not send these requests until both architectures pass the full regression.
-
-| Architecture | App UUID | Version payload |
-| --- | --- | --- |
-| x86_64 | `b1e3aa9c-4df1-4a32-aee9-9aaa447aff8f` | `{"tag":"v0.8.10","browser_download_url":"https://github.com/642671/tos-glance/releases/download/v0.8.10/glance_0.8.10_x86_64.deb"}` |
-| aarch64 | `fe40eccf-109e-40c9-8cfe-e7b75991f07b` | `{"tag":"v0.8.10","browser_download_url":"https://github.com/642671/tos-glance/releases/download/v0.8.10/glance_0.8.10_aarch64.deb"}` |
-
-Release tag and GitHub Release `v0.8.10` have not been created yet. After
-validation, publish both `.deb` files and their `.sha256` sidecars, submit each
-architecture with `POST /v1/apps/{uuid}/versions`, poll the task, verify the
-Parse Result (name, 0.8.10, architecture, size, SHA-256, release note), and only
-then confirm.
+1. Run the complete aarch64 regression on the final package when an ARM machine
+   is available.
+2. Add the validated `glance_0.8.10_aarch64.deb` and `.sha256` to the existing
+   `v0.8.10` Release.
+3. Withdraw aarch64 0.8.9, submit aarch64 0.8.10, verify its Parse Result, and
+   confirm.
