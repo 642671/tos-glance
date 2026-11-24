@@ -92,4 +92,26 @@ machine, no prior app packages):
 
 ## TDP record
 
-Pending submission.
+App record `b1e3aa9c-4df1-4a32-aee9-9aaa447aff8f` (x86_64), `current_version`
+now `0.8.11`, `versions_status=1` (a version is in review).
+
+- Creation task `76e40f43-3a4b-4259-be6b-d71b9442035e`, `all_status=2`
+  (passed) on the first poll.
+- Parse Result before confirm: name `Glance`, version `0.8.11`, platform
+  `x86_64`, size 6,323,202, SHA-256
+  `d89ad3cad907621619e6385ca1ae811559f7d4d3f981a9baa524f4f29254f0a9`,
+  and the complete English release note ending with
+  `official Glance v0.8.8 binaries.`
+- Confirmed Version `c8e5c216-ecb6-40b6-b0e6-d272cafcfb07`, status `0`
+  (reviewing).
+
+An earlier 0.8.11 task (`54ad9943-bb87-4cbd-bf99-6b4a9a60614c`) was cancelled
+before confirm (HTTP 204) because its Parse Result truncated the release note at
+an ASCII semicolon. The current package is the semicolon-free rebuild.
+
+## Remaining steps
+
+1. Run the complete aarch64 regression when an ARM machine is available.
+2. Add the validated `glance_0.8.11_aarch64.deb` and `.sha256` to the
+   `v0.8.11` Release.
+3. Submit aarch64 0.8.11 and confirm its Parse Result.
