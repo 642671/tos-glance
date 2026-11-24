@@ -167,6 +167,12 @@ def validate_language(path: Path, version: str) -> None:
             raise SystemExit(
                 f"language section {section} release_note must start with {version}"
             )
+        for field, value in parser[section].items():
+            if ";" in value:
+                raise SystemExit(
+                    f"language section {section} field {field} must not contain an "
+                    "ASCII semicolon: the TOS INI parser truncates the value there"
+                )
 
 
 def validate_icon(path: Path) -> None:

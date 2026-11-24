@@ -16,42 +16,42 @@ important = "本應用是官方 Glance（AGPL-3.0）的 TOS 套殼，不會聲�
 name = "Glance"
 auth = "qishiyi"
 descript = "A lightweight homepage dashboard with calendar, bookmarks, feeds, and other widgets, opened in a TOS window."
-release_note = "0.8.11: Serve the dashboard through the TOS portal directly (/glance/ -> 127.0.0.1:18741) instead of the /v2/proxy iframe, fixing the blank window and 403 responses; the privacy policy now discloses the online widgets enabled by the default config. Still based on official Glance v0.8.8 binaries."
+release_note = "0.8.11: Serve the dashboard through the TOS portal directly (/glance/ -> 127.0.0.1:18741) instead of the /v2/proxy iframe, fixing the blank window and 403 responses, the privacy policy now discloses the online widgets enabled by the default config. Still based on official Glance v0.8.8 binaries."
 important = "This app is a TOS wrapper of official Glance (AGPL-3.0) and does not claim upstream copyright. Edit /usr/local/glance/data/glance.yml to customize the dashboard."
 
 [fr-fr]
 name = "Glance"
 auth = "qishiyi"
 descript = "Un tableau de bord leger avec calendrier, signets, flux et autres widgets, dans une fenetre TOS."
-release_note = "0.8.11 : Tableau de bord servi directement par le portail TOS (/glance/ -> 127.0.0.1:18741) au lieu de l'iframe /v2/proxy, correction de la fenetre blanche et des 403 ; la politique de confidentialite decrit les widgets en ligne actives par la configuration par defaut. Toujours base sur les binaires officiels Glance v0.8.8."
+release_note = "0.8.11 : Tableau de bord servi directement par le portail TOS (/glance/ -> 127.0.0.1:18741) au lieu de l'iframe /v2/proxy, correction de la fenetre blanche et des 403, la politique de confidentialite decrit les widgets en ligne actives par la configuration par defaut. Toujours base sur les binaires officiels Glance v0.8.8."
 important = "Cette application est une enveloppe TOS de Glance officiel (AGPL-3.0) et ne revendique pas le droit d'auteur amont. Modifiez /usr/local/glance/data/glance.yml pour personnaliser."
 
 [de-de]
 name = "Glance"
 auth = "qishiyi"
 descript = "Ein leichtes Startseiten-Dashboard mit Kalender, Lesezeichen, Feeds und weiteren Widgets im TOS-Fenster."
-release_note = "0.8.11: Dashboard wird direkt ueber das TOS-Portal ausgeliefert (/glance/ -> 127.0.0.1:18741) statt per /v2/proxy-iframe; behebt leeres Fenster und 403. Die Datenschutzerklaerung nennt die standardmaessig aktiven Online-Widgets. Weiterhin offizielle Glance-v0.8.8-Binaries."
+release_note = "0.8.11: Dashboard wird direkt ueber das TOS-Portal ausgeliefert (/glance/ -> 127.0.0.1:18741) statt per /v2/proxy-iframe, behebt leeres Fenster und 403. Die Datenschutzerklaerung nennt die standardmaessig aktiven Online-Widgets. Weiterhin offizielle Glance-v0.8.8-Binaries."
 important = "Diese App ist eine TOS-Huelle fuer das offizielle Glance (AGPL-3.0) und beansprucht kein Upstream-Urheberrecht. Anpassen unter /usr/local/glance/data/glance.yml."
 
 [it-it]
 name = "Glance"
 auth = "qishiyi"
 descript = "Una dashboard leggera con calendario, segnalibri, feed e altri widget, aperta in una finestra TOS."
-release_note = "0.8.11: La dashboard viene servita direttamente dal portale TOS (/glance/ -> 127.0.0.1:18741) invece dell'iframe /v2/proxy, risolvendo schermata bianca e 403; l'informativa privacy descrive i widget online attivi nella configurazione predefinita. Sempre basato sui binari ufficiali Glance v0.8.8."
+release_note = "0.8.11: La dashboard viene servita direttamente dal portale TOS (/glance/ -> 127.0.0.1:18741) invece dell'iframe /v2/proxy, risolvendo schermata bianca e 403, l'informativa privacy descrive i widget online attivi nella configurazione predefinita. Sempre basato sui binari ufficiali Glance v0.8.8."
 important = "Questa app e un wrapper TOS di Glance ufficiale (AGPL-3.0) e non rivendica il copyright upstream. Personalizza /usr/local/glance/data/glance.yml."
 
 [es-es]
 name = "Glance"
 auth = "qishiyi"
 descript = "Un panel de inicio ligero con calendario, marcadores, fuentes y otros widgets, en una ventana TOS."
-release_note = "0.8.11: El panel se sirve directamente desde el portal TOS (/glance/ -> 127.0.0.1:18741) en lugar del iframe /v2/proxy, corrigiendo la pantalla en blanco y los errores 403; la politica de privacidad detalla los widgets en linea de la configuracion predeterminada. Sigue basado en los binarios oficiales de Glance v0.8.8."
+release_note = "0.8.11: El panel se sirve directamente desde el portal TOS (/glance/ -> 127.0.0.1:18741) en lugar del iframe /v2/proxy, corrigiendo la pantalla en blanco y los errores 403, la politica de privacidad detalla los widgets en linea de la configuracion predeterminada. Sigue basado en los binarios oficiales de Glance v0.8.8."
 important = "Esta aplicacion es un envoltorio TOS de Glance oficial (AGPL-3.0) y no reclama el copyright original. Edite /usr/local/glance/data/glance.yml."
 
 [hu-hu]
 name = "Glance"
 auth = "qishiyi"
 descript = "Konnyu kezdolap naptarral, konyvjelzokkel, hirekkel es mas widgetekkel a TOS ablakban."
-release_note = "0.8.11: Az iranyitopult kozvetlenul a TOS portalon keresztul erheto el (/glance/ -> 127.0.0.1:18741) a /v2/proxy iframe helyett; javitja az ures ablakot es a 403 hibakat. Az adatvedelmi tajekoztato kiter az alapertelmezett online widgetekre. Tovabbra is a hivatalos Glance v0.8.8 binarisokon alapul."
+release_note = "0.8.11: Az iranyitopult kozvetlenul a TOS portalon keresztul erheto el (/glance/ -> 127.0.0.1:18741) a /v2/proxy iframe helyett, javitja az ures ablakot es a 403 hibakat. Az adatvedelmi tajekoztato kiter az alapertelmezett online widgetekre. Tovabbra is a hivatalos Glance v0.8.8 binarisokon alapul."
 important = "Ez az alkalmazas a hivatalos Glance (AGPL-3.0) TOS burkolasa, es nem igenyli a felfelezo szerzoi jogot. Testreszabas: /usr/local/glance/data/glance.yml."
 
 [ja-jp]
@@ -72,26 +72,26 @@ important = "이 앱은 공식 Glance(AGPL-3.0)의 TOS 래퍼이며 업스트림
 name = "Glance"
 auth = "qishiyi"
 descript = "Lekki pulpit startowy z kalendarzem, zakladkami, kanalami i innymi widgetami w oknie TOS."
-release_note = "0.8.11: Panel jest serwowany bezposrednio przez portal TOS (/glance/ -> 127.0.0.1:18741) zamiast iframe /v2/proxy, co naprawia bialy ekran i bledy 403; polityka prywatnosci opisuje widgety online wlaczone w domyslnej konfiguracji. Nadal oparte na oficjalnych binariach Glance v0.8.8."
+release_note = "0.8.11: Panel jest serwowany bezposrednio przez portal TOS (/glance/ -> 127.0.0.1:18741) zamiast iframe /v2/proxy, co naprawia bialy ekran i bledy 403, polityka prywatnosci opisuje widgety online wlaczone w domyslnej konfiguracji. Nadal oparte na oficjalnych binariach Glance v0.8.8."
 important = "Ta aplikacja to opakowanie TOS oficjalnego Glance (AGPL-3.0) i nie rosci sobie praw autorskich upstream. Edytuj /usr/local/glance/data/glance.yml."
 
 [ru-ru]
 name = "Glance"
 auth = "qishiyi"
 descript = "Легкая домашняя панель с календарем, закладками, лентами и другими виджетами в окне TOS."
-release_note = "0.8.11: Panel otkryvaetsya napryamuyu cherez portal TOS (/glance/ -> 127.0.0.1:18741) vmesto iframe /v2/proxy; ispravleny belyy ekran i oshibki 403; v politike konfidencialnosti opisany setevye widgety iz konfiguracii po umolchaniyu. Po-prezhnemu na ofitsialnyh binarnyh Glance v0.8.8."
+release_note = "0.8.11: Panel otkryvaetsya napryamuyu cherez portal TOS (/glance/ -> 127.0.0.1:18741) vmesto iframe /v2/proxy, ispravleny belyy ekran i oshibki 403, v politike konfidencialnosti opisany setevye widgety iz konfiguracii po umolchaniyu. Po-prezhnemu na ofitsialnyh binarnyh Glance v0.8.8."
 important = "Это TOS-обёртка официального Glance (AGPL-3.0), авторские права upstream не присваиваются. Настройте /usr/local/glance/data/glance.yml."
 
 [tr-tr]
 name = "Glance"
 auth = "qishiyi"
 descript = "Takvim, yer imleri, akislar ve diger bilesenlerle hafif bir ana sayfa panosu, TOS penceresinde acilir."
-release_note = "0.8.11: Panel, /v2/proxy iframe yerine TOS portali uzerinden dogrudan sunulur (/glance/ -> 127.0.0.1:18741); bos ekran ve 403 hatalari giderildi. Gizlilik politikasi varsayilan yapilandirmadaki cevrimici widget'lari aciklar. Hala resmi Glance v0.8.8 ikili dosyalarina dayanir."
+release_note = "0.8.11: Panel, /v2/proxy iframe yerine TOS portali uzerinden dogrudan sunulur (/glance/ -> 127.0.0.1:18741), bos ekran ve 403 hatalari giderildi. Gizlilik politikasi varsayilan yapilandirmadaki cevrimici widget'lari aciklar. Hala resmi Glance v0.8.8 ikili dosyalarina dayanir."
 important = "Bu uygulama resmi Glance (AGPL-3.0) icin bir TOS sarmalayicisidir ve ust akim telif hakkini sahiplenmez. /usr/local/glance/data/glance.yml dosyasini duzenleyin."
 
 [pt-pt]
 name = "Glance"
 auth = "qishiyi"
 descript = "Um painel inicial leve com calendario, favoritos, fontes e outros widgets, numa janela TOS."
-release_note = "0.8.11: O painel e servido diretamente pelo portal TOS (/glance/ -> 127.0.0.1:18741) em vez do iframe /v2/proxy, corrigindo a tela em branco e os erros 403; a politica de privacidade descreve os widgets online da configuracao padrao. Continua baseado nos binarios oficiais do Glance v0.8.8."
+release_note = "0.8.11: O painel e servido diretamente pelo portal TOS (/glance/ -> 127.0.0.1:18741) em vez do iframe /v2/proxy, corrigindo a tela em branco e os erros 403, a politica de privacidade descreve os widgets online da configuracao padrao. Continua baseado nos binarios oficiais do Glance v0.8.8."
 important = "Esta aplicacao e um invólucro TOS do Glance oficial (AGPL-3.0) e nao reivindica o copyright original. Edite /usr/local/glance/data/glance.yml."

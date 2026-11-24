@@ -39,13 +39,17 @@ Changes in 0.8.11:
   News, Lobsters, GitHub releases), matching actual behaviour.
 - All 14 `release_note` entries describe the direct-portal proxy fix and the
   privacy disclosure.
+- Removed all ASCII semicolons from the language values (replaced with commas).
+  The TOS INI parser treats `;` as a comment start: the first 0.8.11 Parse Result
+  truncated the English release note at "403 responses;". `build.py` now rejects
+  any ASCII semicolon in a language value.
 
 ## Build artifacts (2026-11-24)
 
 | Platform | Package | Bytes | SHA-256 |
 | --- | --- | --- | --- |
-| x86_64 | `glance_0.8.11_x86_64.deb` | 6,323,214 | `1451537b156f20cfe1ea4aa446083de1fb992d4834c8b1e2369b9e882acc8e61` |
-| aarch64 | `glance_0.8.11_aarch64.deb` | 5,737,814 | `695cc1da5ffdc5eb64eea10c49f97ad6dba816b9534b825215a12cee1566341b` |
+| x86_64 | `glance_0.8.11_x86_64.deb` | 6,323,202 | `d89ad3cad907621619e6385ca1ae811559f7d4d3f981a9baa524f4f29254f0a9` |
+| aarch64 | `glance_0.8.11_aarch64.deb` | 5,737,806 | `ed042d65a319488e021f14c5c2a61304280778b4b626487ec83c3ca75ddb85af` |
 
 Both were built twice with `--twice`; consecutive builds were byte-identical.
 The builder ran its package contract and `dpkg-deb --info/--contents` checks.
@@ -60,7 +64,7 @@ Official self-check (`TOSAppSelfTestingTool -c`) on both final packages:
 x86_64 real-device regression on 192.168.2.134 (TOS 7, test user, clean
 machine, no prior app packages):
 
-- remote `sha256sum` matched `1451537b...`
+- remote `sha256sum` matched the submitted hash
 - `dpkg -i` completed in 2 seconds; `postinst` reported
   `service active, socket ready after 1s`
 - unit `glance-system.service` active and enabled, running as non-root user
