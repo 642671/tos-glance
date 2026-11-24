@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parent
 APP_ID = "glance"
 APP_USER = "glance"
 SYSTEM_ID = "glance-system"
-PACKAGE_VERSION = "0.8.10"
+PACKAGE_VERSION = "0.8.11"
 UPSTREAM_TAG = "v0.8.8"
 UPSTREAM_BIN_NAME = "glance"
 DEFAULT_CONF_NAME = "glance.yml"
@@ -546,8 +546,8 @@ def verify_package(path: Path, platform: str, version: str) -> None:
         env_text = read_tar_text(data, f"./usr/local/{APP_ID}/{APP_ID}.env")
         if "PYTHONDONTWRITEBYTECODE=1" not in env_text:
             raise SystemExit("service environment must disable Python bytecode writes")
-        if f"GLANCE_BASE_URL={PROXY_PREFIX}" not in env_text:
-            raise SystemExit("service environment must use the TOS proxy prefix")
+        if "GLANCE_BASE_URL=/glance" not in env_text:
+            raise SystemExit("service environment must use the portal path /glance")
 
         default_config = read_tar_text(
             data, f"./usr/local/{APP_ID}/conf/{DEFAULT_CONF_NAME}"
@@ -570,8 +570,10 @@ def verify_package(path: Path, platform: str, version: str) -> None:
         )
         if "location ^~ /glance/" not in nginx_conf:
             raise SystemExit("nginx route must serve /glance/")
-        if f"alias /usr/local/{APP_ID}/webui/" not in nginx_conf:
-            raise SystemExit("nginx route must point at the extracted WebUI")
+        if "proxy_pass http://127.0.0.1:18741/" not in nginx_conf:
+            raise SystemExit("nginx route must proxy /glance/ to the Glance loopback port")
+        if f"alias /usr/local/{APP_ID}/webui/" in nginx_conf:
+            raise SystemExit("nginx route must not serve the legacy static launcher")
 
         webui_member = data.extractfile(f"./usr/local/{APP_ID}/{WEBUI_ARCHIVE_NAME}")
         if webui_member is None:
@@ -592,8 +594,8 @@ def verify_package(path: Path, platform: str, version: str) -> None:
             index_text = read_tar_text(webui, "./index.html")
             if version not in index_text:
                 raise SystemExit("webui index.html does not reference the package version")
-            if f"{PROXY_PREFIX}/?v={version}" not in index_text:
-                raise SystemExit("webui index.html must point the iframe at the proxy prefix")
+            if 'href="/glance/"' not in index_text:
+                raise SystemExit("webui index.html must link to the portal route")
 
 
 def run_dpkg_inspection(path: Path) -> None:

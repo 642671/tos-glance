@@ -12,7 +12,7 @@ not modified after download.
 | Upstream source archive | https://github.com/glanceapp/glance/archive/refs/tags/v0.8.8.tar.gz |
 | Upstream release workflow | https://github.com/glanceapp/glance/blob/v0.8.8/.github/workflows/release.yaml |
 | Upstream license | GNU Affero General Public License v3.0 |
-| TOS wrapper package version | `0.8.10` |
+| TOS wrapper package version | `0.8.11` |
 
 ## Downloaded assets
 

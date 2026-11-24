@@ -1,5 +1,5 @@
 Package: glance
-Version: 0.8.10
+Version: 0.8.11
 Architecture: amd64
 Section: utils
 Priority: optional

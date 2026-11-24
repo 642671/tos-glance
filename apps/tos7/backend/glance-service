@@ -110,14 +110,15 @@ def main() -> int:
                 return 0
             raise SystemExit(f"Glance did not listen on {LISTEN}:{PORT} within 90s")
         log("INFO", f"Glance is listening on {LISTEN}:{PORT}")
-        # Glance generates URLs with server.base-url but expects the reverse
-        # proxy to strip that prefix before forwarding. The platform may pass
-        # either the full portal path or an already-stripped path.
+        # Glance runs in proxied mode: it serves from the upstream root and
+        # only uses server.base-url to generate URLs. The platform socket
+        # route always carries the /v2/proxy/<appid> prefix, so strip that
+        # (not BASE_URL) before forwarding.
         return serve_proxy(
             SOCKET_PATH,
             LISTEN,
             PORT,
-            strip_prefix=BASE_URL,
+            strip_prefix=PROXY_PREFIX,
             socket_mode=0o660,
             stop_event=stop_event,
         )

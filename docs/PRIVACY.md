@@ -1,7 +1,7 @@
 # Privacy Policy — Glance for TOS 7
 
 Last updated: 2026-11-24
-Applies to: TOS package `glance` 0.8.10 and later builds of this repository
+Applies to: TOS package `glance` 0.8.11 and later builds of this repository
 Bundled upstream: Glance `v0.8.8`
 
 This policy describes how the TOS 7 packaging of **Glance** (`glance`) handles information. The application is installed and runs on the user's own TerraMaster NAS. The packager of this TOS wrapper does not operate a cloud account service for the app and does not receive a copy of data created by a local installation.

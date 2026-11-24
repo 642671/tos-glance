@@ -5,7 +5,7 @@ This is a **TerraMaster TOS 7 packaging wrapper** for the official
 
 It is not the upstream Glance project. The official Linux `x86_64` and
 `aarch64` binaries from the Glance v0.8.8 release are packaged unchanged.
-TOS package version `0.8.10` is a wrapper revision of those same upstream binaries.
+TOS package version `0.8.11` is a wrapper revision of those same upstream binaries.
 Copyright in Glance remains with the upstream authors. This repository only
 adds TOS 7 Deb packaging, a local Unix-socket reverse proxy, systemd units,
 a default configuration, and a [privacy policy](docs/PRIVACY.md).
@@ -23,15 +23,22 @@ Glance binary listens on `127.0.0.1` only. A thin Python 3.10+ standard-library
 proxy exposes it to the TOS portal through `/var/api/glance.sock` so the
 service is not published on a LAN port.
 
-The TOS application window is `/glance/`. The package builds `webui.bz2` from
-`apps/tos7/frontend`, and `postinst` extracts it to
-`/usr/local/glance/webui` on every install or upgrade. The launcher embeds
-`/v2/proxy/glance/`; Glance uses `/v2/proxy/glance` as its `server.base-url`,
-and the socket proxy strips that prefix before forwarding to loopback.
-`postinst` also deploys `nginx/glance.conf` to `/etc/nginx/conf.d/glance.conf`
-so the TOS portal serves `/glance/` from that extracted WebUI. The app center
-deploys this route during a store install; the packaging step makes a manual
-`dpkg -i` behave the same way instead of returning 404.
+The TOS application window is `/glance/`. `postinst` deploys
+`nginx/glance.conf` to `/etc/nginx/conf.d/glance.conf`; the route proxies
+`/glance/` straight to the loopback listener `http://127.0.0.1:18741/`, so the
+portal renders the real Glance dashboard in the application window. Document
+navigation does not go through the platform `/v2/proxy/<appid>/` path.
+
+The package still ships `webui.bz2`, built from `apps/tos7/frontend` and
+extracted by `postinst` to `/usr/local/glance/webui`. It is a small
+compatibility landing page that links to `/glance/`; it is not in the portal
+request path.
+
+Glance uses `/glance` as its `server.base-url`, and the Unix-socket proxy
+strips the platform `/v2/proxy/glance` prefix when the portal calls the socket
+directly. The app center deploys the nginx route during a store install; the
+packaging step makes a manual `dpkg -i` behave the same way instead of
+returning 404.
 
 The packaged application id is `glance`. Separate packages are built for
 `x86_64` and `aarch64`.
@@ -55,14 +62,14 @@ python3 build.py --platform aarch64 --twice
 `--twice` builds the package two times and fails if the `.deb` bytes differ.
 The builder also writes a `.sha256` sidecar and, when `dpkg-deb` is available,
 runs `dpkg-deb --info` and `dpkg-deb --contents`. It also verifies that
-`webui.bz2` contains the launcher assets, the iframe points at the portal proxy
-prefix, the systemd unit has no `Restart=` and keeps `/mnt` optional, and the
-upstream provenance file is packaged.
+`webui.bz2` contains the landing-page assets, the nginx route proxies
+`/glance/` to `127.0.0.1:18741`, the systemd unit has no `Restart=` and keeps
+`/mnt` optional, and the upstream provenance file is packaged.
 
 Output:
 
-- `apps/tos7/dist/glance_0.8.10_x86_64.deb`
-- `apps/tos7/dist/glance_0.8.10_aarch64.deb`
+- `apps/tos7/dist/glance_0.8.11_x86_64.deb`
+- `apps/tos7/dist/glance_0.8.11_aarch64.deb`
 
 Build directories, downloaded upstream binaries, and `.deb` files are gitignored
 and must not be committed.
