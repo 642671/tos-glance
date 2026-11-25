@@ -109,9 +109,28 @@ An earlier 0.8.11 task (`54ad9943-bb87-4cbd-bf99-6b4a9a60614c`) was cancelled
 before confirm (HTTP 204) because its Parse Result truncated the release note at
 an ASCII semicolon. The current package is the semicolon-free rebuild.
 
+### aarch64
+
+App record `fe40eccf-109e-40c9-8cfe-e7b75991f07b` (aarch64), `current_version`
+now `0.8.11`, `versions_status=1`.
+
+- 0.8.9 version `56a7fd94-0de1-4d4b-bf27-90c1a1b2df0a` withdrawn first
+  (HTTP 200, status now 4).
+- Real-device regression on 190 (aarch64, clean TOS 7): install 4 s, service
+  active/enabled in 1 s as non-root `glance`, 18741 loopback, `/glance/` 200
+  with 8,139 bytes of real dashboard HTML, assets 200, socket 200,
+  stop/start/disable/enable/restart all 200, purge zero residue, `nginx -t` OK.
+- Creation task `4d60459b-36df-46e0-9322-67716522a008`, `all_status=2` on the
+  first poll. Parse Result: name `Glance`, version `0.8.11`, platform
+  `aarch64`, size 5,737,806, SHA-256
+  `ed042d65a319488e021f14c5c2a61304280778b4b626487ec83c3ca75ddb85af`,
+  complete release note.
+- Confirmed Version `dd5d9044-84bb-465b-9c5f-c4d1853de370`, status `0`
+  (reviewing).
+- Release assets now include `glance_0.8.11_aarch64.deb` and its `.sha256`.
+
 ## Remaining steps
 
-1. Run the complete aarch64 regression when an ARM machine is available.
-2. Add the validated `glance_0.8.11_aarch64.deb` and `.sha256` to the
-   `v0.8.11` Release.
-3. Submit aarch64 0.8.11 and confirm its Parse Result.
+1. Wait for the review to reach a terminal state. Step 10 is expected to fail
+   while the ARM catalog is stale (210 entries); the version stays queued and
+   should list once the catalog accepts it.
